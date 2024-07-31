@@ -79,12 +79,26 @@ button:hover {
   margin: 20px 0;
 }  */
 
-body,
+/* body,
 html {
   margin: 0;
   padding: 0;
   font-family: "Arial", sans-serif;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+} */
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background: url('https://img.freepik.com/darmowe-zdjecie/widok-z-gory-biurka-z-jablkiem-i-spinaczami-do-papieru_23-2148415067.jpg?t=st=1722451674~exp=1722455274~hmac=539fc421fbb675787ca132fff896009be760b29a7cf0b6a37bf5cc97474eb6a6&w=1380')
+    no-repeat center center/cover; /* Replace with a known working URL */
   min-height: 100vh;
   display: flex;
   justify-content: center;
