@@ -1,13 +1,13 @@
- fix-all
-
-
-
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './index.css';
-import Loader from './components/Loader';
-import DeviceForm from './components/DeviceForm';
-import DeviceList from './components/DeviceList';
-import { fetchRows, addRow, updateRow, deleteRow } from './api';
+
+// Komponent Loader
+const Loader = () => (
+  <div className="loader-container">
+    <div className="loader"></div>
+  </div>
+);
 
 function App() {
   const [formData, setFormData] = useState({
@@ -15,7 +15,6 @@ function App() {
     serial: '',
     inventory: '',
     description: '',
-    plan: '', // Dodaj nowe pole
   });
   const [rows, setRows] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -23,15 +22,26 @@ function App() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const API_URL =
+    'https://script.google.com/macros/s/AKfycbwAEBj53a9eFCZ8Efjadas2hX5Nh6X2ndiAWVw1r13XBGor59pozhHrUFI0do5OoMNK/exec';
+
   useEffect(() => {
-    loadRows();
+    fetchRows();
   }, []);
 
-  const loadRows = async () => {
+  const fetchRows = async () => {
     setLoading(true);
     try {
-      const data = await fetchRows();
-      setRows(data);
+      const response = await axios.get(API_URL, {
+        params: {
+          action: 'getRows',
+        },
+      });
+      if (response.data.result === 'success') {
+        setRows(response.data.data);
+      } else {
+        throw new Error('Nie udało się pobrać danych.');
+      }
     } catch (error) {
       console.error('Błąd:', error);
       setMessage('Nie udało się pobrać danych.');
@@ -49,8 +59,16 @@ function App() {
     setLoading(true);
     try {
       if (isEditing) {
-        await updateRow(editIndex, formData); // Upewnij się, że formData zawiera plan
+        await axios.get(API_URL, {
+          params: {
+            action: 'updateRow',
+            rowIndex: editIndex + 1,
+            data: JSON.stringify(formData),
+          },
+        });
         setMessage('Urządzenie zostało zaktualizowane!');
+
+        // Aktualizuj lokalny stan rows
         setRows(prevRows => {
           const newRows = [...prevRows];
           newRows[editIndex] = [
@@ -58,24 +76,23 @@ function App() {
             formData.serial,
             formData.inventory,
             formData.description,
-            formData.plan, // Upewnij się, że plan jest tutaj
           ];
           return newRows;
         });
+
         setIsEditing(false);
         setEditIndex(null);
       } else {
-        await addRow(formData); // Upewnij się, że formData zawiera plan
+        await axios.get(API_URL, {
+          params: {
+            action: 'addRow',
+            data: JSON.stringify(formData),
+          },
+        });
         setMessage('Urządzenie zostało dodane!');
-        await loadRows(); // Ładowanie zaktualizowanej listy
+        await fetchRows(); // Pobierz zaktualizowane dane
       }
-      setFormData({
-        name: '',
-        serial: '',
-        inventory: '',
-        description: '',
-        plan: '',
-      }); // Resetuje formularz
+      setFormData({ name: '', serial: '', inventory: '', description: '' });
     } catch (error) {
       console.error('Błąd:', error);
       setMessage('Wystąpił błąd podczas zapisywania danych.');
@@ -99,9 +116,14 @@ function App() {
   const handleDelete = async index => {
     setLoading(true);
     try {
-      await deleteRow(index);
+      await axios.get(API_URL, {
+        params: {
+          action: 'deleteRow',
+          rowIndex: index + 1,
+        },
+      });
       setMessage('Urządzenie zostało usunięte!');
-      await loadRows(); // Pobierz zaktualizowane dane
+      await fetchRows(); // Pobierz zaktualizowane dane
     } catch (error) {
       console.error('Błąd:', error);
       setMessage('Wystąpił błąd podczas usuwania urządzenia.');
@@ -112,22 +134,62 @@ function App() {
 
   return (
     <div className="App">
-      {loading && <Loader />}
+      {loading && <Loader />} {/* Dodaj komponent Loader */}
       <h1>Dodaj urządzenie</h1>
       {message && <div className="message">{message}</div>}
-      <DeviceForm
-        formData={formData}
-        handleChange={handleChange}
-        handleSubmit={handleSubmit}
-        isEditing={isEditing}
-      />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Nazwa urządzenia"
+          required
+        />
+        <input
+          type="text"
+          name="serial"
+          value={formData.serial}
+          onChange={handleChange}
+          placeholder="Nr seryjny"
+          required
+        />
+        <input
+          type="text"
+          name="inventory"
+          value={formData.inventory}
+          onChange={handleChange}
+          placeholder="Nr ewidencyjny"
+          required
+        />
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="Opis"
+          required
+          rows="4"
+        />
+        <button type="submit">{isEditing ? 'Zaktualizuj' : 'Dodaj'}</button>
+      </form>
       <h2>Lista urządzeń</h2>
       {rows.length > 0 ? (
-        <DeviceList
-          rows={rows}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
-        />
+        <ul className="device-list">
+          {rows.map((row, index) => (
+            <li key={index} className="device-item">
+              <div className="device-info">
+                <strong>{row[0]}</strong>
+                <span>Nr seryjny: {row[1]}</span>
+                <span>Nr ewidencyjny: {row[2]}</span>
+                <span>Opis: {row[3]}</span>
+              </div>
+              <div className="device-actions">
+                <button onClick={() => handleEdit(index)}>Edytuj</button>
+                <button onClick={() => handleDelete(index)}>Usuń</button>
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (
         <p>Brak urządzeń na liście.</p>
       )}
