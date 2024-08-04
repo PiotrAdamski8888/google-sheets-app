@@ -1,14 +1,7 @@
+// App.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './index.css';
-
-// Komponent Loader
-const Loader = () => (
-  <div className="loader-container">
-    <div className="loader"></div>
-  </div>
-);
-
+import { fetchRows, addRow, updateRow, deleteRow } from './ApiService';
+//
 function App() {
   const [formData, setFormData] = useState({
     name: '',
@@ -23,34 +16,6 @@ function App() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const API_URL =
-    'https://script.google.com/macros/s/AKfycbxFmZUbsaXumHLBLFhEs12obw4Oih0xPiAYKN2jKrotUdGsngHzmzVbvjVLJ81OQiUf/exec';
-
-  useEffect(() => {
-    fetchRows();
-  }, []);
-
-  const fetchRows = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(API_URL, {
-        params: {
-          action: 'getRows',
-        },
-      });
-      if (response.data.result === 'success') {
-        setRows(response.data.data);
-      } else {
-        throw new Error('Nie udało się pobrać danych.');
-      }
-    } catch (error) {
-      console.error('Błąd:', error);
-      setMessage('Nie udało się pobrać danych.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -60,21 +25,14 @@ function App() {
     setLoading(true);
     try {
       if (isEditing) {
-        await axios.get(API_URL, {
-          params: {
-            action: 'updateRow',
-            rowIndex: editIndex + 1,
-            data: JSON.stringify({
-              name: formData.name,
-              serial: formData.serial,
-              inventory: formData.inventory,
-              description: formData.description,
-              plan: formData.plan, // Dodaj pole plan
-            }),
-          },
+        await updateRow(editIndex, {
+          name: formData.name,
+          serial: formData.serial,
+          inventory: formData.inventory,
+          description: formData.description,
+          plan: formData.plan,
         });
         setMessage('Urządzenie zostało zaktualizowane!');
-
         // Aktualizuj lokalny stan rows
         setRows(prevRows => {
           const newRows = [...prevRows];
@@ -83,28 +41,22 @@ function App() {
             formData.serial,
             formData.inventory,
             formData.description,
-            formData.plan, // Dodaj pole plan
+            formData.plan,
           ];
           return newRows;
         });
-
         setIsEditing(false);
         setEditIndex(null);
       } else {
-        await axios.get(API_URL, {
-          params: {
-            action: 'addRow',
-            data: JSON.stringify({
-              name: formData.name,
-              serial: formData.serial,
-              inventory: formData.inventory,
-              description: formData.description,
-              plan: formData.plan, // Dodaj pole plan
-            }),
-          },
+        await addRow({
+          name: formData.name,
+          serial: formData.serial,
+          inventory: formData.inventory,
+          description: formData.description,
+          plan: formData.plan,
         });
         setMessage('Urządzenie zostało dodane!');
-        await fetchRows(); // Pobierz zaktualizowane dane
+        await fetchRowsData(); // Pobierz zaktualizowane dane
       }
       setFormData({
         name: '',
@@ -112,7 +64,7 @@ function App() {
         inventory: '',
         description: '',
         plan: '',
-      }); // Resetuj wszystkie pola
+      });
     } catch (error) {
       console.error('Błąd:', error);
       setMessage('Wystąpił błąd podczas zapisywania danych.');
@@ -127,7 +79,7 @@ function App() {
       serial: rows[index][1],
       inventory: rows[index][2],
       description: rows[index][3],
-      plan: rows[index][4], // Dodaj pole plan
+      plan: rows[index][4],
     });
     setIsEditing(true);
     setEditIndex(index);
@@ -137,14 +89,9 @@ function App() {
   const handleDelete = async index => {
     setLoading(true);
     try {
-      await axios.get(API_URL, {
-        params: {
-          action: 'deleteRow',
-          rowIndex: index + 1,
-        },
-      });
+      await deleteRow(index);
       setMessage('Urządzenie zostało usunięte!');
-      await fetchRows(); // Pobierz zaktualizowane dane
+      await fetchRowsData(); // Pobierz zaktualizowane dane
     } catch (error) {
       console.error('Błąd:', error);
       setMessage('Wystąpił błąd podczas usuwania urządzenia.');
@@ -153,9 +100,30 @@ function App() {
     }
   };
 
+  const fetchRowsData = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchRows();
+      if (data.result === 'success') {
+        setRows(data.data);
+      } else {
+        throw new Error('Nie udało się pobrać danych.');
+      }
+    } catch (error) {
+      console.error('Błąd:', error);
+      setMessage('Nie udało się pobrać danych.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRowsData();
+  }, []);
+
   return (
     <div className="App">
-      {loading && <Loader />} {/* Dodaj komponent Loader */}
+      {loading && <div className="loader">Loading...</div>}
       <h1>Dodaj urządzenie</h1>
       {message && <div className="message">{message}</div>}
       <form onSubmit={handleSubmit}>
@@ -196,7 +164,7 @@ function App() {
         />
         <button type="submit">{isEditing ? 'Zaktualizuj' : 'Dodaj'}</button>
       </form>
-      <h2>Lista urządzeń</h2>
+
       {rows.length > 0 ? (
         <ul className="device-list">
           {rows.map((row, index) => (
