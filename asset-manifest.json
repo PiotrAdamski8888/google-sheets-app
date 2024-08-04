@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/google-sheets-app/static/css/main.2185b7d8.css",
-    "main.js": "/google-sheets-app/static/js/main.082ed467.js",
+    "main.js": "/google-sheets-app/static/js/main.85b5df6d.js",
     "index.html": "/google-sheets-app/index.html",
     "main.2185b7d8.css.map": "/google-sheets-app/static/css/main.2185b7d8.css.map",
-    "main.082ed467.js.map": "/google-sheets-app/static/js/main.082ed467.js.map"
+    "main.85b5df6d.js.map": "/google-sheets-app/static/js/main.85b5df6d.js.map"
   },
   "entrypoints": [
     "static/css/main.2185b7d8.css",
-    "static/js/main.082ed467.js"
+    "static/js/main.85b5df6d.js"
   ]
 }
