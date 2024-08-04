@@ -15,6 +15,7 @@ function App() {
     serial: '',
     inventory: '',
     description: '',
+    plan: '',
   });
   const [rows, setRows] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -23,7 +24,7 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   const API_URL =
-    'https://script.google.com/macros/s/AKfycbwAEBj53a9eFCZ8Efjadas2hX5Nh6X2ndiAWVw1r13XBGor59pozhHrUFI0do5OoMNK/exec';
+    'https://script.google.com/macros/s/AKfycbxFmZUbsaXumHLBLFhEs12obw4Oih0xPiAYKN2jKrotUdGsngHzmzVbvjVLJ81OQiUf/exec';
 
   useEffect(() => {
     fetchRows();
@@ -63,7 +64,13 @@ function App() {
           params: {
             action: 'updateRow',
             rowIndex: editIndex + 1,
-            data: JSON.stringify(formData),
+            data: JSON.stringify({
+              name: formData.name,
+              serial: formData.serial,
+              inventory: formData.inventory,
+              description: formData.description,
+              plan: formData.plan, // Dodaj pole plan
+            }),
           },
         });
         setMessage('Urządzenie zostało zaktualizowane!');
@@ -76,6 +83,7 @@ function App() {
             formData.serial,
             formData.inventory,
             formData.description,
+            formData.plan, // Dodaj pole plan
           ];
           return newRows;
         });
@@ -86,13 +94,25 @@ function App() {
         await axios.get(API_URL, {
           params: {
             action: 'addRow',
-            data: JSON.stringify(formData),
+            data: JSON.stringify({
+              name: formData.name,
+              serial: formData.serial,
+              inventory: formData.inventory,
+              description: formData.description,
+              plan: formData.plan, // Dodaj pole plan
+            }),
           },
         });
         setMessage('Urządzenie zostało dodane!');
         await fetchRows(); // Pobierz zaktualizowane dane
       }
-      setFormData({ name: '', serial: '', inventory: '', description: '' });
+      setFormData({
+        name: '',
+        serial: '',
+        inventory: '',
+        description: '',
+        plan: '',
+      }); // Resetuj wszystkie pola
     } catch (error) {
       console.error('Błąd:', error);
       setMessage('Wystąpił błąd podczas zapisywania danych.');
@@ -107,6 +127,7 @@ function App() {
       serial: rows[index][1],
       inventory: rows[index][2],
       description: rows[index][3],
+      plan: rows[index][4], // Dodaj pole plan
     });
     setIsEditing(true);
     setEditIndex(index);
@@ -144,7 +165,6 @@ function App() {
           value={formData.name}
           onChange={handleChange}
           placeholder="Nazwa urządzenia"
-          required
         />
         <input
           type="text"
@@ -152,7 +172,6 @@ function App() {
           value={formData.serial}
           onChange={handleChange}
           placeholder="Nr seryjny"
-          required
         />
         <input
           type="text"
@@ -160,15 +179,20 @@ function App() {
           value={formData.inventory}
           onChange={handleChange}
           placeholder="Nr ewidencyjny"
-          required
         />
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
           placeholder="Opis"
-          required
           rows="4"
+        />
+        <input
+          type="text"
+          name="plan"
+          value={formData.plan}
+          onChange={handleChange}
+          placeholder="Plan"
         />
         <button type="submit">{isEditing ? 'Zaktualizuj' : 'Dodaj'}</button>
       </form>
@@ -182,6 +206,7 @@ function App() {
                 <span>Nr seryjny: {row[1]}</span>
                 <span>Nr ewidencyjny: {row[2]}</span>
                 <span>Opis: {row[3]}</span>
+                <span>Plan: {row[4]}</span>
               </div>
               <div className="device-actions">
                 <button onClick={() => handleEdit(index)}>Edytuj</button>
