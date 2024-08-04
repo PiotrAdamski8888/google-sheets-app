@@ -1,3 +1,7 @@
+ fix-all
+
+
+
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import Loader from './components/Loader';
